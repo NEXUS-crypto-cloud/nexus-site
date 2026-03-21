@@ -5,15 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NΞXUS — lightning core</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
-  <!-- Firebase globális SDK (9-es verzió, kompatibilis) -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
-
+  <!-- EGYETLEN FIREBASE SCRIPT: globális SDK (auth + firestore egyben) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase.js"></script>
   <style>
-    /* Itt ugyanaz a CSS, mint korábban – a teljesség kedvéért bemásolom a lényeges részt, de az eredeti CSS-t is használhatod */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
+      --bg-deep: #03030c;
       --card-bg: rgba(18, 18, 30, 0.85);
       --glass-border: rgba(255, 255, 255, 0.08);
       --gold-primary: #e8b73b;
@@ -30,34 +27,279 @@
       line-height: 1.5;
       min-height: 100vh;
     }
-    .lightning-bg { /* ... a teljes villámos háttér, de a helytakarékosság miatt most csak a vázlat */ 
-      position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; 
+    /* LIGHTNING BACKGROUND */
+    .lightning-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
     }
-    .wrapper { position: relative; z-index: 2; max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
-    .hero { text-align: center; margin: 2rem 0 3rem; }
-    .avatar { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,215,120,0.6); }
-    .brand { margin-top: 1rem; font-size: 1.5rem; letter-spacing: 6px; background: linear-gradient(135deg,#f5e3b0,#d4a017); background-clip: text; -webkit-background-clip: text; color: transparent; }
-    h1 { font-size: clamp(3rem,12vw,5.8rem); font-weight: 800; letter-spacing: 8px; background: linear-gradient(130deg,#fff,#f5cf7b,#d4a017); background-clip: text; -webkit-background-clip: text; color: transparent; }
-    .sub { color: var(--text-muted); border-bottom: 1px dashed rgba(212,160,23,0.4); display: inline-block; padding-bottom: 6px; }
-    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit,minmax(320px,1fr)); gap: 2rem; margin: 3rem 0 2.5rem; }
-    .glass-card { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--glass-border); border-radius: 2rem; padding: 1.8rem; transition: var(--transition); }
-    .btn-group { display: flex; flex-wrap: wrap; gap: 1rem; margin: 1.5rem 0 0.8rem; }
-    .btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(20,20,35,0.8); border: 1px solid rgba(183,124,255,0.5); padding: 0.7rem 1.6rem; border-radius: 60px; font-weight: 600; color: #eaeaff; text-decoration: none; transition: var(--transition); font-size: 0.9rem; cursor: pointer; }
-    .btn:hover { background: var(--purple-dark); border-color: var(--gold-primary); box-shadow: 0 0 12px rgba(124,58,255,0.6); }
-    .downloads-table { width: 100%; margin-top: 1rem; border-collapse: separate; border-spacing: 0 10px; }
-    .downloads-table tr { background: rgba(10,10,20,0.6); border-radius: 18px; }
-    .downloads-table td { padding: 12px 8px; }
-    .download-link { background: none; border: 1px solid var(--purple-neon); color: var(--purple-neon); padding: 6px 16px; border-radius: 30px; text-decoration: none; font-size: 0.8rem; transition: 0.2s; }
-    .download-link:hover { background: var(--purple-neon); color: #0a0a14; }
-    .license-footer { margin-top: 4rem; background: rgba(5,5,12,0.75); border-radius: 2rem; overflow: hidden; }
-    .license-toggle { padding: 1rem 1.5rem; cursor: pointer; background: rgba(0,0,0,0.4); color: #f5d793; display: flex; justify-content: space-between; }
-    .license-content { display: none; padding: 1.2rem 1.8rem; color: #cbcbe6; border-top: 1px solid rgba(255,215,0,0.15); }
-    .info-note { font-size: 0.75rem; text-align: center; margin-top: 1rem; color: #6a6a8b; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 1rem; }
-    @media (max-width:700px){ .wrapper { padding: 1.5rem 1rem; } .btn-group { flex-direction: column; } }
+    .lightning-bg::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 70% 30%, rgba(80, 30, 150, 0.2) 0%, transparent 60%);
+    }
+    .bolt {
+      position: absolute;
+      background: linear-gradient(135deg, #b77cff, #5f2eff);
+      filter: blur(18px);
+      opacity: 0.4;
+      animation: pulseGlow 6s infinite alternate;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+    }
+    .bolt1 {
+      top: 5%;
+      left: -5%;
+      width: 260px;
+      height: 460px;
+      clip-path: polygon(40% 0%, 60% 20%, 35% 40%, 55% 60%, 30% 80%, 50% 100%, 20% 100%, 0% 70%, 25% 45%, 10% 20%);
+      background: linear-gradient(145deg, #b27aff, #3c0b9e);
+      opacity: 0.3;
+      animation: floatLightning 14s infinite alternate ease-in-out;
+    }
+    .bolt2 {
+      bottom: 0;
+      right: -2%;
+      width: 320px;
+      height: 520px;
+      clip-path: polygon(70% 0%, 85% 25%, 65% 45%, 90% 70%, 60% 85%, 80% 100%, 40% 95%, 30% 70%, 55% 55%, 40% 30%);
+      background: linear-gradient(45deg, #a260ff, #4610b0);
+      opacity: 0.25;
+      filter: blur(22px);
+      animation: floatLightning2 18s infinite alternate;
+    }
+    .bolt3 {
+      top: 40%;
+      left: 20%;
+      width: 180px;
+      height: 380px;
+      background: linear-gradient(120deg, #c28aff, #672eff);
+      clip-path: polygon(50% 0%, 65% 30%, 45% 45%, 70% 65%, 48% 80%, 68% 100%, 35% 95%, 25% 70%, 45% 55%, 30% 30%);
+      filter: blur(14px);
+      opacity: 0.35;
+      animation: flicker 3.5s infinite alternate, drift 12s infinite alternate;
+    }
+    .spark {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: #c08aff;
+      border-radius: 50%;
+      box-shadow: 0 0 12px #a86eff;
+      opacity: 0;
+      animation: sparkle 4s infinite;
+    }
+    @keyframes floatLightning {
+      0% { transform: translate(0px, 0px) rotate(0deg); opacity: 0.2; }
+      100% { transform: translate(25px, -15px) rotate(3deg); opacity: 0.45; }
+    }
+    @keyframes floatLightning2 {
+      0% { transform: translate(0px, 0px) rotate(0deg); opacity: 0.2; }
+      100% { transform: translate(-20px, 20px) rotate(-4deg); opacity: 0.4; }
+    }
+    @keyframes flicker {
+      0% { opacity: 0.2; filter: blur(16px); }
+      100% { opacity: 0.5; filter: blur(10px); }
+    }
+    @keyframes drift {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(30px, 20px); }
+    }
+    @keyframes sparkle {
+      0% { opacity: 0; transform: scale(0); }
+      20% { opacity: 0.7; transform: scale(1); }
+      80% { opacity: 0.4; transform: scale(0.8); }
+      100% { opacity: 0; transform: scale(0); }
+    }
+    @keyframes pulseGlow {
+      0% { filter: blur(18px); opacity: 0.2; }
+      100% { filter: blur(24px); opacity: 0.45; }
+    }
+    /* main content */
+    .wrapper {
+      position: relative;
+      z-index: 2;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 5rem;
+    }
+    .hero { text-align: center; margin: 2rem 0 3rem 0; }
+    .avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255, 215, 120, 0.6);
+      box-shadow: 0 0 20px rgba(212, 160, 23, 0.4);
+    }
+    .brand {
+      margin-top: 1rem;
+      font-size: 1.5rem;
+      letter-spacing: 6px;
+      background: linear-gradient(135deg, #f5e3b0, #d4a017);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+    h1 {
+      font-size: clamp(3rem, 12vw, 5.8rem);
+      font-weight: 800;
+      letter-spacing: 8px;
+      background: linear-gradient(130deg, #ffffff 20%, #f5cf7b 60%, #d4a017 90%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+    .sub {
+      color: var(--text-muted);
+      border-bottom: 1px dashed rgba(212, 160, 23, 0.4);
+      display: inline-block;
+      padding-bottom: 6px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem;
+      margin: 3rem 0 2.5rem;
+    }
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: 2rem;
+      padding: 1.8rem;
+      transition: var(--transition);
+      box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.5);
+    }
+    .glass-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(212, 160, 23, 0.5);
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 1.2rem;
+      border-left: 3px solid var(--gold-primary);
+      padding-left: 1rem;
+    }
+    .card-header h2 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(145deg, #ffffff, #e2ca86);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin: 1.5rem 0 0.8rem;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(20, 20, 35, 0.8);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(183, 124, 255, 0.5);
+      padding: 0.7rem 1.6rem;
+      border-radius: 60px;
+      font-weight: 600;
+      color: #eaeaff;
+      text-decoration: none;
+      transition: var(--transition);
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: var(--purple-dark);
+      border-color: var(--gold-primary);
+      box-shadow: 0 0 12px rgba(124, 58, 255, 0.6);
+    }
+    .downloads-table {
+      width: 100%;
+      margin-top: 1rem;
+      border-collapse: separate;
+      border-spacing: 0 10px;
+    }
+    .downloads-table tr {
+      background: rgba(10, 10, 20, 0.6);
+      border-radius: 18px;
+    }
+    .downloads-table td {
+      padding: 12px 8px;
+    }
+    .download-link {
+      background: none;
+      border: 1px solid var(--purple-neon);
+      color: var(--purple-neon);
+      padding: 6px 16px;
+      border-radius: 30px;
+      text-decoration: none;
+      font-size: 0.8rem;
+      transition: 0.2s;
+    }
+    .download-link:hover {
+      background: var(--purple-neon);
+      color: #0a0a14;
+    }
+    .license-footer {
+      margin-top: 4rem;
+      background: rgba(5, 5, 12, 0.75);
+      backdrop-filter: blur(8px);
+      border-radius: 2rem;
+      overflow: hidden;
+    }
+    .license-toggle {
+      padding: 1rem 1.5rem;
+      cursor: pointer;
+      background: rgba(0, 0, 0, 0.4);
+      color: #f5d793;
+      display: flex;
+      justify-content: space-between;
+    }
+    .license-content {
+      display: none;
+      padding: 1.2rem 1.8rem;
+      color: #cbcbe6;
+      font-size: 0.85rem;
+      border-top: 1px solid rgba(255, 215, 0, 0.15);
+    }
+    .info-note {
+      font-size: 0.75rem;
+      text-align: center;
+      margin-top: 1rem;
+      color: #6a6a8b;
+      border-top: 1px dashed rgba(255,255,255,0.1);
+      padding-top: 1rem;
+    }
+    @media (max-width: 700px) {
+      .wrapper { padding: 1.5rem 1rem; }
+      .btn-group { flex-direction: column; }
+      .downloads-table td { display: block; width: 100%; }
+      .downloads-table tr { display: block; margin-bottom: 1rem; padding: 8px; }
+    }
   </style>
 </head>
 <body>
-<div class="lightning-bg"><!-- Villám elemek (a teljesség kedvéért ide másold a .bolt, .spark elemeket) --></div>
+
+<div class="lightning-bg">
+  <div class="bolt bolt1"></div>
+  <div class="bolt bolt2"></div>
+  <div class="bolt bolt3"></div>
+  <div class="spark" style="top: 15%; left: 45%;"></div>
+  <div class="spark" style="top: 65%; left: 80%; animation-delay: 1.2s;"></div>
+  <div class="spark" style="top: 35%; left: 10%; animation-delay: 2.5s;"></div>
+</div>
+
 <div class="wrapper">
   <div class="hero">
     <img class="avatar" src="Nexusprofile.png" alt="NEXUS" onerror="this.src='https://placehold.co/120x120/1e1a2e/ffd966?text=NX'">
@@ -78,7 +320,7 @@
   <div class="grid-2">
     <!-- COMMUNITY -->
     <div class="glass-card">
-      <div class="card-header" style="border-left: 3px solid var(--gold-primary); padding-left: 1rem;"><h2>✦ COMMUNITY</h2></div>
+      <div class="card-header"><h2>✦ COMMUNITY</h2></div>
       <p>Join the inner circle — Discord hub, latest updates, and exclusive content.</p>
       <div class="btn-group">
         <a class="btn" href="https://discord.gg/vdmzkXfefU" target="_blank">🎧 Join Discord</a>
@@ -87,120 +329,141 @@
       <div class="info-note">⚡ active events · giveaways · early access</div>
     </div>
 
-    <!-- DOWNLOADS (csak bejelentkezés után) -->
+    <!-- DOWNLOADS (csak bejelentkezés után látszik) -->
     <div id="downloadsCard" class="glass-card" style="display: none;">
-      <div class="card-header" style="border-left: 3px solid var(--gold-primary); padding-left: 1rem;"><h2>⬇ DOWNLOADS</h2></div>
+      <div class="card-header"><h2>⬇ DOWNLOADS</h2></div>
       <p>Tools, experiments & educational resources.</p>
       <table class="downloads-table">
         <tbody>
-          <tr><td><span class="date-badge">2026-03-21</span></td><td><strong>TEST_BUTTON_V1.rar</strong><br><small>0 MB</small></td><td><a class="download-link" href="https://github.com/NEXUS-crypto-cloud/nexus-site/raw/refs/heads/main/TEST_BUTTON_V1.rar" data-filename="TEST_BUTTON_V1.rar" target="_blank">↓ Letöltés</a></td></tr>
-          <tr><td><span class="date-badge">2026-03-20</span></td><td><strong>Nexus_Launcher_Beta.zip</strong><br><small>2.4 MB</small></td><td><a class="download-link" href="https://github.com/NEXUS-crypto-cloud/nexus-site/raw/refs/heads/main/Nexus_Launcher_Beta.zip" data-filename="Nexus_Launcher_Beta.zip" target="_blank">↓ Letöltés</a></td></tr>
+          <tr>
+            <td>2026-03-21</td>
+            <td><strong>TEST_BUTTON_V1.rar</strong><br><small>0 MB</small></td>
+            <td><a class="download-link" href="https://github.com/NEXUS-crypto-cloud/nexus-site/raw/refs/heads/main/TEST_BUTTON_V1.rar" data-filename="TEST_BUTTON_V1.rar" target="_blank">↓ Letöltés</a></td>
+          </tr>
+          <tr>
+            <td>2026-03-20</td>
+            <td><strong>Nexus_Launcher_Beta.zip</strong><br><small>2.4 MB</small></td>
+            <td><a class="download-link" href="https://github.com/NEXUS-crypto-cloud/nexus-site/raw/refs/heads/main/Nexus_Launcher_Beta.zip" data-filename="Nexus_Launcher_Beta.zip" target="_blank">↓ Letöltés</a></td>
+          </tr>
         </tbody>
       </table>
     </div>
   </div>
 
   <div class="license-footer">
-    <div class="license-toggle" onclick="toggleLicensePanel()">
+    <div class="license-toggle" onclick="toggleLicense()">
       <span>⚖️ LICENSE & TERMS</span>
       <span id="licenseArrow">▼</span>
     </div>
     <div class="license-content" id="licensePanel">
-      <p><strong>NΞXUS Educational License v1.0</strong></p>
+      <p><strong>NΞXUS Educational & Entertainment License v1.0</strong></p>
       <p>All content is created for educational and entertainment purposes. By downloading you agree to the terms: no malicious use, no redistribution without permission, use at your own risk.</p>
     </div>
   </div>
 </div>
 
 <script>
-  // Firebase konfiguráció
-  const firebaseConfig = {
-    apiKey: "AIzaSyDW0lUVCf0N8VmLwmlnyoc2GAdW6llHuKs",
-    authDomain: "nexus-67676.firebaseapp.com",
-    projectId: "nexus-67676",
-    storageBucket: "nexus-67676.firebasestorage.app",
-    messagingSenderId: "640354273542",
-    appId: "1:640354273542:web:128bbc9ce5eb9e09557687",
-    measurementId: "G-C9CPN7FEP4"
-  };
-
-  // Inicializálás (globális SDK)
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const provider = new firebase.auth.GoogleAuthProvider();
-  const db = firebase.firestore();
-
-  const loginBtn = document.getElementById('loginBtn');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const userInfo = document.getElementById('userInfo');
-  const downloadsCard = document.getElementById('downloadsCard');
-
-  auth.onAuthStateChanged(async (user) => {
-    if (user) {
-      loginBtn.style.display = 'none';
-      logoutBtn.style.display = 'inline-flex';
-      userInfo.style.display = 'inline-block';
-      userInfo.innerHTML = `👋 Üdv, ${user.displayName || user.email}!`;
-      downloadsCard.style.display = 'block';
-
-      // Felhasználói dokumentum a Firestore-ban
-      const userRef = db.collection('users').doc(user.uid);
-      try {
-        await userRef.set({
-          email: user.email,
-          name: user.displayName,
-          lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
-          downloads: []
-        }, { merge: true });
-        console.log("✅ Felhasználó dokumentum sikeresen elmentve");
-      } catch (error) {
-        console.error("❌ Hiba a dokumentum mentésekor:", error);
-        userInfo.innerHTML = `⚠️ Adatbázis hiba: ${error.message}`;
-      }
-    } else {
-      loginBtn.style.display = 'inline-flex';
-      logoutBtn.style.display = 'none';
-      userInfo.style.display = 'none';
-      downloadsCard.style.display = 'none';
+  // Várjuk, hogy a Firebase SDK betöltődjön
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof firebase === 'undefined') {
+      alert('Firebase nem töltődött be. Ellenőrizd az internetkapcsolatod!');
+      return;
     }
-  });
 
-  loginBtn.onclick = () => {
-    auth.signInWithPopup(provider).catch(error => {
-      console.error("Bejelentkezési hiba:", error);
-      userInfo.innerHTML = `⚠️ Hiba: ${error.message}`;
-    });
-  };
-  logoutBtn.onclick = () => auth.signOut();
-
-  // Letöltés naplózása
-  async function logDownload(fileName, fileUrl) {
-    const user = auth.currentUser;
-    if (!user) return;
-    const userRef = db.collection('users').doc(user.uid);
-    const downloadEntry = {
-      fileName: fileName,
-      url: fileUrl,
-      downloadedAt: firebase.firestore.FieldValue.serverTimestamp()
+    // Firebase konfiguráció
+    const firebaseConfig = {
+      apiKey: "AIzaSyDW0lUVCf0N8VmLwmlnyoc2GAdW6llHuKs",
+      authDomain: "nexus-67676.firebaseapp.com",
+      projectId: "nexus-67676",
+      storageBucket: "nexus-67676.firebasestorage.app",
+      messagingSenderId: "640354273542",
+      appId: "1:640354273542:web:128bbc9ce5eb9e09557687",
+      measurementId: "G-C9CPN7FEP4"
     };
-    try {
-      await userRef.update({
-        downloads: firebase.firestore.FieldValue.arrayUnion(downloadEntry)
-      });
-      console.log(`📥 Letöltés naplózva: ${fileName}`);
-    } catch (error) {
-      console.error("Naplózási hiba:", error);
-    }
-  }
 
-  document.querySelectorAll('.download-link').forEach(link => {
-    link.addEventListener('click', (e) => {
-      const fileName = link.getAttribute('data-filename') || link.innerText.trim();
-      logDownload(fileName, link.href);
+    // Inicializálás
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const provider = new firebase.auth.GoogleAuthProvider();
+    const db = firebase.firestore();
+
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const userInfo = document.getElementById('userInfo');
+    const downloadsCard = document.getElementById('downloadsCard');
+
+    // Felhasználó állapotának figyelése
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        loginBtn.style.display = 'none';
+        logoutBtn.style.display = 'inline-flex';
+        userInfo.style.display = 'inline-block';
+        userInfo.innerHTML = `👋 Üdv, ${user.displayName || user.email}!`;
+        downloadsCard.style.display = 'block';
+
+        // Felhasználói dokumentum létrehozása a Firestore-ban (ha még nincs)
+        const userRef = db.collection('users').doc(user.uid);
+        try {
+          await userRef.set({
+            email: user.email,
+            name: user.displayName,
+            lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+            downloads: []
+          }, { merge: true });
+          console.log("✅ Felhasználó dokumentum sikeresen elmentve");
+        } catch (error) {
+          console.error("❌ Hiba a dokumentum mentésekor:", error);
+          userInfo.innerHTML = `⚠️ Adatbázis hiba: ${error.message}`;
+        }
+      } else {
+        loginBtn.style.display = 'inline-flex';
+        logoutBtn.style.display = 'none';
+        userInfo.style.display = 'none';
+        userInfo.innerHTML = '';
+        downloadsCard.style.display = 'none';
+      }
+    });
+
+    loginBtn.onclick = () => {
+      auth.signInWithPopup(provider).catch((error) => {
+        console.error("Bejelentkezési hiba:", error);
+        userInfo.innerHTML = `⚠️ Hiba: ${error.message}`;
+      });
+    };
+    logoutBtn.onclick = () => auth.signOut();
+
+    // Letöltés naplózása
+    async function logDownload(fileName, fileUrl) {
+      const user = auth.currentUser;
+      if (!user) return;
+      const userRef = db.collection('users').doc(user.uid);
+      const downloadEntry = {
+        fileName: fileName,
+        url: fileUrl,
+        downloadedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      try {
+        await userRef.update({
+          downloads: firebase.firestore.FieldValue.arrayUnion(downloadEntry)
+        });
+        console.log(`📥 Letöltés naplózva: ${fileName}`);
+      } catch (error) {
+        console.error("Naplózási hiba:", error);
+      }
+    }
+
+    // Eseményfigyelők a letöltő linkekhez
+    document.querySelectorAll('.download-link').forEach(link => {
+      link.addEventListener('click', (event) => {
+        const fileName = link.getAttribute('data-filename') || link.innerText.trim();
+        const fileUrl = link.href;
+        logDownload(fileName, fileUrl);
+      });
     });
   });
 
-  function toggleLicensePanel() {
+  // Licensz toggle
+  function toggleLicense() {
     const panel = document.getElementById('licensePanel');
     const arrow = document.getElementById('licenseArrow');
     if (panel.style.display === 'none' || panel.style.display === '') {
