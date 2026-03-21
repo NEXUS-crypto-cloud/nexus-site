@@ -313,8 +313,8 @@
   <!-- Bejelentkezési kártya -->
   <div class="glass-card" style="text-align: center;">
     <div class="btn-group" style="justify-content: center;">
-      <button id="loginBtn" class="btn">🔐 Google bejelentkezés</button>
-      <button id="logoutBtn" class="btn" style="display: none;">🚪 Kijelentkezés</button>
+      <button id="loginBtn" class="btn">🔐 Google login</button>
+      <button id="logoutBtn" class="btn" style="display: none;">🚪 logout</button>
     </div>
     <div id="userInfo" style="display: none; margin-top: 10px;"></div>
   </div>
@@ -338,14 +338,9 @@
       <table class="downloads-table">
         <tbody>
           <tr>
-            <td>2026-03-21</td>
-            <td><strong>TEST_BUTTON_V1.rar</strong><br><small>0 MB</small></td>
-            <td><a class="download-link" href="https://github.com/NEXUS-crypto-cloud/nexus-site/raw/refs/heads/main/TEST_BUTTON_V1.rar" data-filename="TEST_BUTTON_V1.rar" target="_blank">↓ Letöltés</a></td>
-          </tr>
-          <tr>
-            <td>2026-03-20</td>
-            <td><strong>Nexus_Launcher_Beta.zip</strong><br><small>2.4 MB</small></td>
-            <td><a class="download-link" href="https://github.com/NEXUS-crypto-cloud/nexus-site/raw/refs/heads/main/Nexus_Launcher_Beta.zip" data-filename="Nexus_Launcher_Beta.zip" target="_blank">↓ Letöltés</a></td>
+            <td>developer</td>
+            <td><strong>developer</strong><br><small>0 MB</small></td>
+            <td><a class="download-link" href="developer" target="_blank">↓ download</a></td>
           </tr>
         </tbody>
       </table>
@@ -359,7 +354,85 @@
     </div>
     <div class="license-content" id="licensePanel">
       <p><strong>NΞXUS Educational & Entertainment License v1.0</strong></p>
-      <p>All content is created for educational and entertainment purposes. By downloading you agree to the terms: no malicious use, no redistribution without permission, use at your own risk.</p>
+      <p>NΞXUS Educational & Entertainment License v2.0
+
+Last updated: 2026-03-21
+
+1. Purpose
+
+All software, tools, digital assets, and downloadable content provided on this platform (“Content”) are developed and distributed strictly for educational, experimental, and entertainment purposes only.
+
+2. Acceptance of Terms
+
+By accessing, downloading, or using any Content from NΞXUS, you (“User”) agree to be legally bound by the terms of this license.
+If you do not agree, you must not use or download any Content.
+
+3. Permitted Use
+
+You are allowed to:
+
+Use the Content for personal, non-commercial purposes
+Study, analyze, and learn from the provided materials
+Modify the Content for private use only
+4. Prohibited Use
+
+You are strictly prohibited from:
+
+Using the Content for malicious, illegal, or harmful activities
+Redistributing, reselling, sublicensing, or sharing the Content without explicit written permission
+Attempting to bypass, exploit, or abuse systems, services, or security mechanisms
+Using the Content in any way that violates applicable local, national, or international laws
+5. No Warranty
+
+The Content is provided “as is”, without any warranties of any kind, express or implied.
+NΞXUS makes no guarantees regarding:
+
+Functionality
+Reliability
+Security
+Fitness for a particular purpose
+6. Limitation of Liability
+
+Under no circumstances shall NΞXUS or its creators be held liable for:
+
+Any direct or indirect damages
+Data loss
+System damage
+Legal consequences resulting from misuse
+
+Use of the Content is entirely at your own risk.
+
+7. Security & Responsibility
+
+You are solely responsible for:
+
+How you use the Content
+Any consequences resulting from its use
+Ensuring your actions comply with all applicable laws and regulations
+8. Intellectual Property
+
+All Content remains the intellectual property of NΞXUS unless otherwise stated.
+Unauthorized use, duplication, or distribution may result in legal action.
+
+9. Access Control
+
+NΞXUS reserves the right to:
+
+Restrict or revoke access to Content at any time
+Modify or remove files without prior notice
+Monitor usage for security and abuse prevention
+10. Changes to License
+
+This license may be updated at any time without prior notice. Continued use of the platform constitutes acceptance of the latest version.
+
+11. Contact
+
+For permissions, questions, or legal inquiries, contact:
+nexus.collective.contact@gmail.com
+
+⚠️ Important Notice
+This platform is intended for responsible users only.
+Any misuse may result in access restriction and potential legal consequences.</p>
     </div>
   </div>
 </div>
@@ -372,8 +445,8 @@
     } else if (attempts < 10) {
       setTimeout(() => waitForFirebase(attempts + 1), 500);
     } else {
-      document.getElementById('userInfo').innerHTML = '⚠️ Firebase SDK nem töltődött be – ellenőrizd a hálózatot vagy az engedélyezett domaineket.';
-      console.error('Firebase SDK nem elérhető 5 másodperc után.');
+      document.getElementById('userInfo').innerHTML = '⚠️ Firebase SDK not loaded - check your network or allowed domains.';
+      console.error('Firebase SDK unavailable after 5 seconds.');
     }
   }
 
@@ -404,7 +477,7 @@
         loginBtn.style.display = 'none';
         logoutBtn.style.display = 'inline-flex';
         userInfo.style.display = 'inline-block';
-        userInfo.innerHTML = `👋 Üdv, ${user.displayName || user.email}!`;
+        userInfo.innerHTML = `👋 Hello, ${user.displayName || user.email}!`;
         downloadsCard.style.display = 'block';
 
         // Felhasználó dokumentum létrehozása (ha nincs)
@@ -417,7 +490,7 @@
             downloads: []
           }, { merge: true });
         } catch (e) {
-          console.warn("Adatbázis hiba (de folytatjuk):", e);
+          console.warn("Database error (but we'll continue):", e);
         }
       } else {
         loginBtn.style.display = 'inline-flex';
@@ -431,7 +504,7 @@
       auth.signInWithPopup(provider).catch(error => {
         console.error(error);
         userInfo.style.display = 'inline-block';
-        userInfo.innerHTML = `⚠️ Hiba: ${error.message}`;
+        userInfo.innerHTML = `⚠️ Error: ${error.message}`;
       });
     };
     logoutBtn.onclick = () => auth.signOut();
@@ -450,7 +523,7 @@
         await userRef.update({
           downloads: firebase.firestore.FieldValue.arrayUnion(entry)
         });
-      } catch (e) { console.warn("Naplózás sikertelen", e); }
+      } catch (e) { console.warn("Logging failed", e); }
     }
 
     document.querySelectorAll('.download-link').forEach(link => {
