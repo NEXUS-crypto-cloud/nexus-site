@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NΞXUS — lightning core</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
-  <!-- EGYETLEN FIREBASE SCRIPT: globális SDK (auth + firestore egyben) -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;600;700;800&display=swap" rel="stylesheet">
+  <!-- Firebase globális SDK (összevont, stabil) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
@@ -27,7 +27,7 @@
       line-height: 1.5;
       min-height: 100vh;
     }
-    /* LIGHTNING BACKGROUND */
+    /* LIGHTNING BACKGROUND (rövidítve, de ugyanaz, mint előző) */
     .lightning-bg {
       position: fixed;
       top: 0;
@@ -363,13 +363,11 @@
 </div>
 
 <script>
-  // Várjuk, hogy a Firebase SDK betöltődjön
-  document.addEventListener('DOMContentLoaded', () => {
-    if (typeof firebase === 'undefined') {
-      alert('Firebase nem töltődött be. Ellenőrizd az internetkapcsolatod!');
-      return;
-    }
-
+  // Globális Firebase objektum ellenőrzése (ha nem töltődött be, kiírjuk a konzolba, de nem akadályozzuk)
+  if (typeof firebase === 'undefined') {
+    console.error('Firebase SDK nem töltődött be – ellenőrizd a hálózatot vagy a script URL-t!');
+    document.getElementById('userInfo').innerHTML = '⚠️ Firebase hiba – próbáld újra később.';
+  } else {
     // Firebase konfiguráció
     const firebaseConfig = {
       apiKey: "AIzaSyDW0lUVCf0N8VmLwmlnyoc2GAdW6llHuKs",
@@ -381,7 +379,6 @@
       measurementId: "G-C9CPN7FEP4"
     };
 
-    // Inicializálás
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const provider = new firebase.auth.GoogleAuthProvider();
@@ -392,7 +389,7 @@
     const userInfo = document.getElementById('userInfo');
     const downloadsCard = document.getElementById('downloadsCard');
 
-    // Felhasználó állapotának figyelése
+    // Állapotfigyelés
     auth.onAuthStateChanged(async (user) => {
       if (user) {
         loginBtn.style.display = 'none';
@@ -401,7 +398,7 @@
         userInfo.innerHTML = `👋 Üdv, ${user.displayName || user.email}!`;
         downloadsCard.style.display = 'block';
 
-        // Felhasználói dokumentum létrehozása a Firestore-ban (ha még nincs)
+        // Felhasználó dokumentum létrehozása (ha nincs)
         const userRef = db.collection('users').doc(user.uid);
         try {
           await userRef.set({
@@ -410,59 +407,51 @@
             lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
             downloads: []
           }, { merge: true });
-          console.log("✅ Felhasználó dokumentum sikeresen elmentve");
-        } catch (error) {
-          console.error("❌ Hiba a dokumentum mentésekor:", error);
-          userInfo.innerHTML = `⚠️ Adatbázis hiba: ${error.message}`;
+        } catch (e) {
+          console.warn("Adatbázis hiba (de folytatjuk):", e);
         }
       } else {
         loginBtn.style.display = 'inline-flex';
         logoutBtn.style.display = 'none';
         userInfo.style.display = 'none';
-        userInfo.innerHTML = '';
         downloadsCard.style.display = 'none';
       }
     });
 
     loginBtn.onclick = () => {
-      auth.signInWithPopup(provider).catch((error) => {
-        console.error("Bejelentkezési hiba:", error);
+      auth.signInWithPopup(provider).catch(error => {
+        console.error(error);
+        userInfo.style.display = 'inline-block';
         userInfo.innerHTML = `⚠️ Hiba: ${error.message}`;
       });
     };
     logoutBtn.onclick = () => auth.signOut();
 
-    // Letöltés naplózása
+    // Letöltés naplózás
     async function logDownload(fileName, fileUrl) {
       const user = auth.currentUser;
       if (!user) return;
       const userRef = db.collection('users').doc(user.uid);
-      const downloadEntry = {
-        fileName: fileName,
+      const entry = {
+        fileName,
         url: fileUrl,
         downloadedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
       try {
         await userRef.update({
-          downloads: firebase.firestore.FieldValue.arrayUnion(downloadEntry)
+          downloads: firebase.firestore.FieldValue.arrayUnion(entry)
         });
-        console.log(`📥 Letöltés naplózva: ${fileName}`);
-      } catch (error) {
-        console.error("Naplózási hiba:", error);
-      }
+      } catch (e) { console.warn("Naplózás sikertelen", e); }
     }
 
-    // Eseményfigyelők a letöltő linkekhez
     document.querySelectorAll('.download-link').forEach(link => {
-      link.addEventListener('click', (event) => {
-        const fileName = link.getAttribute('data-filename') || link.innerText.trim();
-        const fileUrl = link.href;
-        logDownload(fileName, fileUrl);
+      link.addEventListener('click', () => {
+        const name = link.getAttribute('data-filename') || link.innerText.trim();
+        logDownload(name, link.href);
       });
     });
-  });
+  }
 
-  // Licensz toggle
   function toggleLicense() {
     const panel = document.getElementById('licensePanel');
     const arrow = document.getElementById('licenseArrow');
