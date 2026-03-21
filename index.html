@@ -4,249 +4,306 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>NΞXUS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Montserrat:wght@700&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg: #070707;
-      --card: #111;
-      --border: #222;
+      --bg: #0a0a14;
+      --bg-deep: #090913;
+      --card: #141421;
+      --border: #2a2a2a;
       --gold: #d4a017;
-      --soft: #b026ff;
-      --text: #fff;
-      --muted: #aaa;
+      --purple: #8a5af8;
+      --purple-dark: #6a3bdc;
+      --fume: rgba(108, 72, 204, 0.25);
     }
 
-    /* Reset egyszerűsítés */
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
+    /* Reset + base */
+    * {box-sizing: border-box;}
+    html, body { height: 100%; }
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.5;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto;
+      color: #fff;
+      background: radial-gradient(circle at 20% -10%, rgba(132,0,255,.25), transparent 40%), 
+                  radial-gradient(circle at 90% 10%, rgba(0,160,255,.15), transparent 40%), 
+                  linear-gradient(135deg, #0a0a14 0%, #0b0a1a 60%, #090414 100%);
+      overflow-x: hidden;
     }
 
-    /* TOP STRIPE - finomabb animáció */
-    .top-bar {
+    /* BACKGROUND EFFECTS: lightning + smoke overlay (pure CSS)
+       Lehet blokkoló felesleges, de hatásos vizuális elem. */
+    .bg-effects {
       position: fixed;
-      top: -80px;
-      left: 0;
-      width: 100%;
-      height: 80px;
-      background: linear-gradient(to bottom, #000, transparent);
-      animation: drop 1.1s ease-out forwards;
-      z-index: 10;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    /* villám (CSS animált vonalak) */
+    .lightning {
+      position: absolute;
+      width: 2px;
+      height: 120vh;
+      left: 10%;
+      top: -20vh;
+      background: linear-gradient(#fff, transparent 60%);
+      opacity: .25;
+      filter: drop-shadow(0 0 8px rgba(170, 180, 255, 0.9));
+      animation: strike 2s linear infinite;
+      transform: rotate(2deg);
+    }
+    @keyframes strike {
+      0%, 100% { transform: translateX(0) rotate(2deg); opacity:.2;}
+      50% { transform: translateX(-20px) rotate(2deg); opacity:.8; }
+    }
+    /* füst-sávok */
+    .smoke {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      right: -60px;
+      bottom: -60px;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.18), transparent 40%),
+                  radial-gradient(circle at 70% 70%, rgba(100,0,180,.25), transparent 40%);
+      filter: blur(40px);
+      opacity: .25;
+      animation: drift 12s linear infinite;
+      border-radius: 50%;
+    }
+    @keyframes drift {
+      0% { transform: translate(0,0); opacity:.25; }
+      50% { transform: translate(-40px,-20px); opacity:.35; }
+      100% { transform: translate(0,0); opacity:.25; }
     }
 
-    @keyframes drop {
-      to { top: 0; }
-    }
-
+    /* NAV/HEADER */
     header {
+      position: relative;
       text-align: center;
-      padding: 100px 20px 40px;
+      padding: 120px 20px 40px;
+      z-index: 1;
+    }
+
+    /* profil-kép a logo helyén */
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 16px;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+    .avatar {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.25);
+      box-shadow: 0 6px 24px rgba(0,0,0,.4);
+      object-fit: cover;
+      background: #222;
+    }
+    .brand-name {
+      display: inline-block;
+      font-family: Montserrat, sans-serif;
+      font-weight: 800;
+      letter-spacing: 6px;
+      color: #fff;
+    }
+    .brand-name span {
+      color: var(--purple);
     }
 
     h1 {
-      color: var(--gold);
-      font-size: 56px;
-      letter-spacing: 5px;
+      color: #ffd54f;
+      font-family: Montserrat, sans-serif;
+      font-size: 64px;
+      letter-spacing: 6px;
+      margin: 8px 0 6px;
     }
 
     .subtitle {
-      color: #b026ff;
-      margin-top: 6px;
+      color: #caa6ff;
+      font-size: 18px;
+      opacity: .95;
     }
 
+    /* KONTEJNER, BOXOK */
     .container {
-      max-width: 1000px;
+      max-width: 1100px;
       margin: 0 auto;
-      padding: 0 20px 40px;
+      padding: 0 20px 60px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
     }
 
     .box {
-      background: #141414;
-      border: 1px solid #2a2a2a;
-      border-radius: 12px;
-      padding: 20px;
-      margin: 22px 0;
-      transition: transform .2s ease;
+      background: rgba(20,20,28,.9);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      padding: 22px;
+      transition: transform .2s ease, box-shadow .2s ease;
+      box-shadow: 0 20px 40px rgba(0,0,0,.25);
     }
-    .box:hover { transform: translateY(-2px); }
+    .box:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 28px 60px rgba(0,0,0,.35);
+    }
 
     .box h2 {
-      color: var(--gold);
+      color: #ffd54f;
+      font-size: 24px;
       margin-bottom: 8px;
-      font-size: 22px;
     }
 
     .btn {
       display: inline-block;
-      padding: 10px 20px;
-      border: 1px solid var(--gold);
-      color: var(--gold);
+      padding: 12px 22px;
+      border: 1px solid #b08aff;
+      color: #c8b6ff;
       text-decoration: none;
-      border-radius: 6px;
-      transition: background-color .2s ease, color .2s ease;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all .15s ease;
     }
-
     .btn:hover {
-      background: var(--soft);
-      color: #fff;
-      border-color: var(--soft);
+      background: #b08aff;
+      color: white;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 8px;
+      font-size: 14px;
     }
-
-    th, td {
-      padding: 12px;
-      border-bottom: 1px solid #333;
-      vertical-align: middle;
-    }
-
-    th {
-      color: var(--muted);
-      text-align: left;
-      font-weight: normal;
-    }
-
+    th, td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,.08); text-align: left; }
+    th { color: #ddd; font-weight: 500; }
     .download-btn {
-      border: 1px solid #b026ff;
+      display: inline-block;
+      border: 1px solid #a06cff;
       padding: 6px 12px;
-      color: #b026ff;
+      color: #a06cff;
       text-decoration: none;
-      border-radius: 4px;
+      border-radius: 6px;
       transition: background-color .2s ease, color .2s ease;
     }
-
     .download-btn:hover {
-      background: #b026ff;
+      background: #a06cff;
       color: white;
     }
 
-    /* LICENSE notch */
+    /* LICENCE panele*/
     .license {
       position: fixed;
-      bottom: 0;
       left: 0;
       right: 0;
-      background: #0b0b0b;
-      border-top: 1px solid #222;
-      z-index: 20;
+      bottom: 0;
+      background: rgba(5,5,9,.95);
+      border-top: 1px solid rgba(255,255,255,.08);
+      z-index: 3;
     }
-
     .license-header {
       text-align: center;
       padding: 12px;
       cursor: pointer;
-      color: var(--gold);
+      color: #ffd6a1;
       user-select: none;
     }
-
     .license-content {
       display: none;
-      padding: 12px 16px;
-      color: var(--muted);
+      padding: 14px 16px;
+      color: #ddd;
       font-size: 14px;
     }
 
-    /* Responsiveness */
-    @media (max-width: 800px) {
-      h1 { font-size: 48px; }
-      header { padding: 80px 16px 28px; }
+    /* responsive */
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+      h1 { font-size: 54px; }
     }
-    @media (max-width: 480px) {
-      h1 { font-size: 40px; }
-      .subtitle { font-size: 14px; }
-      .box { padding: 16px; }
+    @media (max-width: 420px) {
+      h1 { font-size: 46px; }
+      .avatar { width: 96px; height: 96px; }
     }
   </style>
 
   <script>
     function toggleLicense() {
-      var x = document.getElementById("licenseContent");
-      // egyszerű toggle
-      if (x.style.display === "block") {
-        x.style.display = "none";
-      } else {
-        x.style.display = "block";
-      }
+      var content = document.getElementById("licenseContent");
+      var visible = content.style.display === "block";
+      content.style.display = visible ? "none" : "block";
+      document.getElementById("licenseToggle").setAttribute("aria-expanded", String(!visible));
+      content.setAttribute("aria-hidden", String(visible));
     }
   </script>
 </head>
-
 <body>
 
-  <div class="top-bar" aria-hidden="true"></div>
+  <div class="bg-effects" aria-hidden="true">
+    <div class="lightning" style="left:8%;"></div>
+    <div class="lightning" style="left:38%; top:-20vh; width:3px;"></div>
+    <div class="smoke"></div>
+  </div>
 
   <header>
+    <!-- Profilkép + név -->
+    <div class="brand" aria-label="Profilkép">
+      <!-- Cseréld a src-t a saját profilképedre vagy logóra -->
+      <img class="avatar" src="path/to/your-profile.png" alt="NΞXUS profilkép">
+      <div class="brand-name" style="font-size:28px; font-weight:900; letter-spacing:1px;">
+        NΞX<span style="color:var(--purple);">US</span>
+      </div>
+    </div>
+
     <h1>NΞXUS</h1>
-    <p class="subtitle">Gaming • Programs • Fake Virus</p>
+    <div class="subtitle">Gaming • Programs • Innovative Tech</div>
   </header>
 
-  <main class="container" role="main">
-    <section class="box" aria-labelledby="community-title">
-      <h2 id="community-title">Community</h2>
-      <p>Join the NΞXUS Discord szerverét.</p>
-      <a class="btn" href="https://discord.gg/IDE_A_LINKED" target="_blank" rel="noopener">
-        Join Discord
-      </a>
-    </section>
+  <main class="container" role="main" aria-label="Főtartalom">
+    <section class="grid" aria-labelledby="community-title">
+      <div class="box" id="community-title" aria-labelledby="community-title">
+        <h2>Community</h2>
+        <p>Csatlakozz a NΞXUS Discord szerveréhez.</p>
+        <a class="btn" href="https://discord.gg/IDE_A_LINKED" target="_blank" rel="noopener">
+          Join Discord
+        </a>
+      </div>
 
-    <section class="box" aria-labelledby="downloads-title">
-      <h2 id="downloads-title">Downloads</h2>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>File</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>2026-03-20</td>
-            <td>
-              TEST BUTTON<br>
-              <small>0 MB</small>
-            </td>
-            <td>
-              <a class="download-btn" href="files/program1.zip" download>Download</a>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="box" aria-labelledby="downloads-title">
+        <h2 id="downloads-title">Downloads</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>File</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>2026-03-20</td>
+              <td>TEST BUTTON<br><small>0 MB</small></td>
+              <td><a class="download-btn" href="files/program1.zip" download>Download</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </section>
   </main>
 
-  <div class="license" aria-label="Licenc pont">
-    <div class="license-header" onclick="toggleLicense()" role="button" aria-expanded="false" id="licenseToggle">
+  <div class="license" aria-label="Licenc panel">
+    <div class="license-header" id="licenseToggle" onclick="toggleLicense()" role="button" aria-expanded="false">
       LICENSE ▼
     </div>
-
     <div class="license-content" id="licenseContent" aria-hidden="true">
       <p>All content is for educational and entertainment purposes only. Use at your own risk. No responsibility is taken for misuse.</p>
     </div>
   </div>
-
-  <script>
-    // ARIA állapotok frissítése a hozzáférhetőségért
-    (function(){
-      var btn = document.getElementById('licenseToggle');
-      var content = document.getElementById('licenseContent');
-      btn.addEventListener('click', function(){
-        var isOpen = content.style.display === 'block';
-        content.style.display = isOpen ? 'none' : 'block';
-        btn.setAttribute('aria-expanded', String(!isOpen));
-        content.setAttribute('aria-hidden', String(isOpen));
-      });
-    })();
-  </script>
 
 </body>
 </html>
