@@ -12,7 +12,7 @@ This includes:
 - Gaming-related content
 
 ## 🌐 Website
-https://nexus-crypto-cloud.github.io/nexus-site/
+[https://nexus-crypto-cloud.github.io/nexus-site/](https://nexus-the-power.github.io/NEXUS-website-menu/)
 
 ## 💬 Community
 Join the Discord server:
